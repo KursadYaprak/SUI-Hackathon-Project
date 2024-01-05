@@ -174,10 +174,60 @@ module personhub::relationshipcard {
         )
     }
 
-    // Test-only initialization function for testing purposes
-    #[test_only]
+    // Test initialization function for testing purposes
+    #[test]
     // Not public by default
     public fun init_for_testing(ctx: &mut TxContext){
         init(ctx);
     }
 }
+
+import 0x1::personhub::relationshipcard;
+
+module personhub::relationshipcard_test {
+    use 0x1::personhub::relationshipcard;
+
+    // Test the creation of multiple cards and updating description
+    public fun test_create_multiple_cards_and_update_description() {
+        // Initialize the context for testing
+        let mut ctx = 0x1::sui::tx_context::create();
+
+        // Initialize the PersonHub for testing
+        relationshipcard::init_for_testing(&mut ctx);
+
+        // Create three test cards
+        create_test_card(b"Alice", b"Engineer", b"https://example.com/alice.jpg", 1, b"Music", b"Travel", b"alice@example.com", 2, &mut ctx);
+        create_test_card(b"Bob", b"Designer", b"https://example.com/bob.jpg", 0, b"Art", b"Cooking", b"bob@example.com", 3, &mut ctx);
+        create_test_card(b"Charlie", b"Doctor", b"https://example.com/charlie.jpg", 5, b"Reading", b"Sports", b"charlie@example.com", 1, &mut ctx);
+
+        // Update the description of the second card
+        let updated_description = b"Updated description for Bob";
+        update_description(2, updated_description, &mut ctx);
+
+        // Verify the updated description
+        let updated_card_info = relationshipcard::get_card_info(&0x1::sui::tx_context::sender(&ctx), 2);
+        assert!(updated_card_info.4 == Some("Updated description for Bob"));
+
+        // Print a success message
+        0x1::sui::event::emit({}) // Dummy event to print success
+    }
+
+    // Helper function to create a test card
+    fun create_test_card(
+        name: vector<u8>, profession: vector<u8>, img_url: vector<u8>,
+        how_many_past_relationship: u8, hobbies: vector<u8>, interests: vector<u8>,
+        contact: vector<u8>, coin_value: u64, ctx: &mut 0x1::sui::tx_context::TxContext
+    ) {
+        let coin = 0x1::sui::coin::create(coin_value);
+        relationshipcard::create_card(
+            name, profession, img_url, how_many_past_relationship,
+            hobbies, interests, contact, coin, &mut ctx
+        );
+    }
+
+    // Helper function to update the description of a card
+    fun update_description(card_id: u64, new_description: vector<u8>, ctx: &mut 0x1::sui::tx_context::TxContext) {
+        relationshipcard::update_card_description(&mut 0x1::sui::tx_context::sender(&ctx), new_description, card_id, &mut ctx);
+    }
+}
+
